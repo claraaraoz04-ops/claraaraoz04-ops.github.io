@@ -1,0 +1,159 @@
+---
+// Cabecera de proyecto: columna de texto (título, subtítulo, descripción,
+// cascada, bocetos) junto a la imagen principal, como las portadillas del PDF.
+import Media from './Media.astro';
+import Cascade from './Cascade.astro';
+import { projectNumber, type Project } from '../data/projects';
+import { findImage } from '../lib/images';
+import { t, type Lang } from '../i18n/ui';
+
+interface Props {
+  project: Project;
+  lang: Lang;
+}
+
+const { project: p, lang } = Astro.props;
+const ui = t(lang);
+const heroLeft = p.heroSide === 'left';
+const textEdge = heroLeft ? 'c-last' : 'c-first';
+const sketches = p.introImages ?? [];
+// columnas proporcionales a cada boceto para que todos tengan la misma altura
+const sketchCols = sketches
+  .map((img) => {
+    const m = findImage(img.src);
+    return `minmax(0, ${m ? (m.width / m.height).toFixed(3) : 1}fr)`;
+  })
+  .join(' ');
+// filas de la columna de texto: título, [subtítulo], descripción, cascada, [bocetos]
+const rows = 3 + (p.subtitle ? 1 : 0) + (sketches.length ? 1 : 0);
+---
+
+<section
+  class:list={['sheet intro', { 'is-hero-left': heroLeft }]}
+  style={`grid-template-rows: repeat(${rows - 1}, auto) minmax(0, 1fr)`}
+  data-draw
+>
+  <div class:list={['cell intro__title', textEdge]} data-draw>
+    <p class="eyebrow">
+      <span class="num">{projectNumber(p)}</span> — {ui.filters[p.category]}
+      {p.comingSoon && <> · {ui.comingSoon}</>}
+    </p>
+    <h1 class="display">{p.title[lang]}</h1>
+  </div>
+
+  {
+    p.subtitle && (
+      <div class:list={['cell intro__sub', textEdge]} data-draw>
+        <p class="lede">{p.subtitle[lang]}</p>
+      </div>
+    )
+  }
+
+  <div class:list={['cell intro__desc', textEdge]} data-draw>
+    <div class="prose">
+      {p.description.map((d) => <p>{d[lang]}</p>)}
+    </div>
+  </div>
+
+  <div class:list={['cell intro__cascade', textEdge, { 'is-last v-end': !sketches.length }]} data-draw>
+    <Cascade words={p.keywords.map((k) => k[lang])} />
+  </div>
+
+  {
+    sketches.length > 0 && (
+      <div class:list={['cell intro__sketches', textEdge]} style={`grid-template-columns: ${sketchCols}`} data-draw>
+        {sketches.map((img) => (
+          <Media img={img} lang={lang} sizes="(max-width: 767px) 50vw, 25vw" />
+        ))}
+      </div>
+    )
+  }
+
+  <div class:list={['cell media-cell intro__hero', heroLeft ? 'c-first' : 'c-last']} data-draw>
+    <Media img={p.hero} lang={lang} priority sizes="(max-width: 767px) 100vw, 50vw" />
+  </div>
+</section>
+
+<style>
+  .intro {
+    grid-template-columns: 1fr 1fr;
+    min-height: var(--spread-h);
+  }
+
+  .intro > .cell:not(.intro__hero) {
+    grid-column: 1;
+  }
+
+  .intro__hero {
+    grid-column: 2;
+    grid-row: 1 / -1;
+  }
+
+  .is-hero-left > .cell:not(.intro__hero) {
+    grid-column: 2;
+  }
+
+  .is-hero-left .intro__hero {
+    grid-column: 1;
+  }
+
+  .intro__title {
+    padding-top: clamp(28px, 4vw, 56px);
+  }
+
+  .intro__title .eyebrow {
+    margin-bottom: 0.9rem;
+  }
+
+  .intro__cascade.is-last {
+    align-items: flex-end;
+    padding-bottom: clamp(32px, 5vw, 72px);
+  }
+
+  .intro__sketches {
+    display: grid;
+    gap: var(--pad);
+    padding-top: 0;
+    padding-bottom: 0;
+    min-height: 240px;
+  }
+
+  .intro__sketches :global(.media) {
+    height: 100%;
+  }
+
+  /* aquí los bocetos ya traen su propio margen blanco: sin relleno extra */
+  .intro__sketches :global(.media--sketch.media--fill > img) {
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  @media (max-width: 767px) {
+    .intro__title {
+      order: 0;
+    }
+    .intro__sub {
+      order: 1;
+    }
+    .intro__hero {
+      order: 2;
+    }
+    .intro__desc,
+    .intro__cascade,
+    .intro__sketches {
+      order: 3;
+    }
+    .intro__cascade.is-last {
+      align-items: flex-start;
+      padding-bottom: var(--pad);
+    }
+    .intro__sketches {
+      min-height: 0;
+      align-items: center;
+    }
+    .intro__sketches :global(.media) {
+      height: auto;
+    }
+  }
+</style>

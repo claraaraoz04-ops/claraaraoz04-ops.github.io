@@ -1,0 +1,90 @@
+---
+import { projects, type Project } from '../data/projects';
+import { projectUrl, routes, t, type Lang } from '../i18n/ui';
+
+interface Props {
+  project: Project;
+  lang: Lang;
+}
+
+const { project, lang } = Astro.props;
+const ui = t(lang);
+const i = projects.indexOf(project);
+const prev = projects[(i - 1 + projects.length) % projects.length];
+const next = projects[(i + 1) % projects.length];
+---
+
+<nav class="sheet pnav" aria-label={ui.projectNav} data-draw>
+  <a class="cell c-first pnav__link" href={projectUrl(prev.slug, lang)} rel="prev" data-draw>
+    <span class="eyebrow">← {ui.prev}</span>
+    <span class="display display--s">{prev.title[lang]}</span>
+  </a>
+  <a class="cell pnav__index v-center" href={routes.work[lang]} data-draw>
+    <span class="eyebrow">{ui.index}</span>
+  </a>
+  <a class="cell c-last pnav__link is-next" href={projectUrl(next.slug, lang)} rel="next" data-draw>
+    <span class="eyebrow">{ui.next} →</span>
+    <span class="display display--s">{next.title[lang]}</span>
+  </a>
+</nav>
+
+<style>
+  .pnav {
+    grid-template-columns: 1fr auto 1fr;
+  }
+
+  .pnav a {
+    text-decoration: none;
+  }
+
+  .pnav__link {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    padding-top: clamp(28px, 4vw, 56px);
+    padding-bottom: clamp(28px, 4vw, 56px);
+  }
+
+  .pnav__link .display {
+    background: linear-gradient(currentColor, currentColor) left bottom / 0 1.5px no-repeat;
+    transition: background-size 0.45s var(--ease-out);
+    width: fit-content;
+  }
+
+  .pnav__link:hover .display,
+  .pnav__link:focus-visible .display {
+    background-size: 100% 1.5px;
+  }
+
+  .is-next {
+    align-items: flex-end;
+    text-align: right;
+  }
+
+  .pnav__index {
+    align-items: center;
+    padding-left: clamp(24px, 4vw, 64px);
+    padding-right: clamp(24px, 4vw, 64px);
+  }
+
+  .pnav__index:hover .eyebrow {
+    color: var(--ink);
+    text-decoration: underline;
+  }
+
+  .pnav :focus-visible {
+    outline-offset: -6px;
+  }
+
+  @media (max-width: 767px) {
+    .is-next {
+      align-items: flex-start;
+      text-align: left;
+    }
+    .pnav__index {
+      align-items: flex-start;
+      padding-top: 18px;
+      padding-bottom: 18px;
+    }
+  }
+</style>

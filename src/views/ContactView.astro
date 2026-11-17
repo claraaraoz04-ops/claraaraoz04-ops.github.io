@@ -1,0 +1,169 @@
+---
+import Base from '../layouts/Base.astro';
+import ContactDetails from '../components/ContactDetails.astro';
+import { routes, t, type Lang } from '../i18n/ui';
+import { site } from '../data/site';
+
+interface Props {
+  lang: Lang;
+}
+
+const { lang } = Astro.props;
+const ui = t(lang);
+---
+
+<Base lang={lang} title={ui.contact} altUrl={routes.contact[lang === 'es' ? 'en' : 'es']} current="contact">
+  <section class="sheet contact" data-draw>
+    <div class="cell c-first c-title v-end" data-draw>
+      <h1 class="display">{ui.contact}</h1>
+    </div>
+    <div class="cell c-last c-blank m-hide" data-draw></div>
+
+    <div class="cell c-first c-info" data-draw>
+      <p class="lede">{ui.contactIntro}</p>
+      <ContactDetails lang={lang} />
+    </div>
+    <div class="cell c-last c-form" data-draw>
+      {
+        /*
+          FORMULARIO
+          Ahora mismo abre la aplicación de correo del visitante (mailto:).
+          Para recibir los mensajes sin que el visitante necesite un cliente de correo,
+          usa Formspree (gratis hasta 50 envíos/mes):
+            1. Crea un formulario en https://formspree.io y copia su endpoint.
+            2. Cambia la etiqueta <form> por:
+                 <form class="form" action="https://formspree.io/f/TU_ID" method="POST">
+            3. Borra el atributo data-mailto y el <script> de abajo.
+          Los campos name / email / message ya tienen los nombres que espera Formspree.
+        */
+      }
+      <form class="form" action={`mailto:${site.formEmail}`} method="post" enctype="text/plain" data-mailto={site.formEmail} data-subject={ui.form.subject}>
+        <div class="field">
+          <label for="f-name">{ui.form.name}</label>
+          <input id="f-name" name="name" type="text" autocomplete="name" required />
+        </div>
+        <div class="field">
+          <label for="f-email">{ui.form.email}</label>
+          <input id="f-email" name="email" type="email" autocomplete="email" required />
+        </div>
+        <div class="field">
+          <label for="f-message">{ui.form.message}</label>
+          <textarea id="f-message" name="message" rows="6" required></textarea>
+        </div>
+        <div class="form__foot">
+          <button type="submit">{ui.form.send} →</button>
+          <p class="eyebrow">{ui.form.note}</p>
+        </div>
+      </form>
+    </div>
+  </section>
+</Base>
+
+<script>
+  // Construye un mailto: con asunto y cuerpo a partir de los campos.
+  document.querySelectorAll<HTMLFormElement>('form[data-mailto]').forEach((form) => {
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const data = new FormData(form);
+      const name = String(data.get('name') ?? '');
+      const email = String(data.get('email') ?? '');
+      const message = String(data.get('message') ?? '');
+      const subject = `${form.dataset.subject} — ${name}`;
+      const body = `${message}\n\n${name}\n${email}`;
+      window.location.href = `mailto:${form.dataset.mailto}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    });
+  });
+</script>
+
+<style>
+  .contact {
+    grid-template-columns: 1fr 1.25fr;
+    grid-template-rows: minmax(clamp(160px, 26vh, 300px), auto) minmax(clamp(420px, 56vh, 640px), auto);
+  }
+
+  .c-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+  }
+
+  .c-info .lede {
+    max-width: 30ch;
+  }
+
+  .form {
+    display: grid;
+    gap: 1.75rem;
+    max-width: 640px;
+  }
+
+  .field {
+    display: grid;
+    gap: 0.35rem;
+  }
+
+  label {
+    font-size: 0.75rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+
+  input,
+  textarea {
+    font: inherit;
+    font-size: 1rem;
+    color: var(--ink);
+    background: transparent;
+    border: 0;
+    border-bottom: var(--rule-w) solid var(--rule);
+    border-radius: 0;
+    padding: 0.5rem 0;
+    resize: vertical;
+  }
+
+  textarea {
+    border: var(--rule-w) solid var(--rule);
+    padding: 0.75rem;
+  }
+
+  input:focus-visible,
+  textarea:focus-visible {
+    outline: 2px solid var(--rule);
+    outline-offset: 2px;
+  }
+
+  .form__foot {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1rem 1.5rem;
+  }
+
+  button {
+    font-family: var(--serif);
+    font-size: 1.125rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--cream);
+    background: var(--ink);
+    border: var(--rule-w) solid var(--ink);
+    border-radius: 0;
+    padding: 0.8rem 1.4rem;
+    cursor: pointer;
+    transition:
+      background-color 0.25s,
+      color 0.25s;
+  }
+
+  button:hover {
+    background: transparent;
+    color: var(--ink);
+  }
+
+  @media (max-width: 767px) {
+    .c-title {
+      padding-top: 72px;
+    }
+  }
+</style>

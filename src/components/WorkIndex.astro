@@ -1,0 +1,232 @@
+---
+// Índice de proyectos con filtros y vista previa al pasar el cursor.
+import Media from './Media.astro';
+import { projects, projectNumber, type Category } from '../data/projects';
+import { projectUrl, t, type Lang } from '../i18n/ui';
+
+interface Props {
+  lang: Lang;
+  /** 'h1' en la página de trabajo, 'h2' en la portada */
+  as?: 'h1' | 'h2';
+}
+
+const { lang, as: Heading = 'h2' } = Astro.props;
+const ui = t(lang);
+const filters: ('all' | Category)[] = ['all', 'industrial', 'ux-ui'];
+---
+
+<section class="sheet windex" aria-labelledby={`indice-${Heading}`} data-draw data-windex>
+  <div class="cell c-first windex__head v-end" data-draw>
+    <Heading class="display" id={`indice-${Heading}`}>{ui.index}</Heading>
+  </div>
+  <div class="cell c-last windex__filters v-end" data-draw>
+    <div class="filters" role="group" aria-label={ui.filterLabel}>
+      {
+        filters.map((f, i) => (
+          <>
+            {i > 0 && (
+              <span class="filters__sep" aria-hidden="true">
+                /
+              </span>
+            )}
+            <button type="button" data-filter={f} aria-pressed={f === 'all' ? 'true' : 'false'}>
+              {ui.filters[f]}
+            </button>
+          </>
+        ))
+      }
+    </div>
+  </div>
+
+  <div class="cell c-first windex__list" data-draw>
+    <ol class="rows">
+      {
+        projects.map((p) => (
+          <li data-cat={p.category}>
+            <a class="row" href={projectUrl(p.slug, lang)} data-slug={p.slug}>
+              <span class="row__name">
+                {p.title[lang]}
+                {p.comingSoon && <span class="row__tag"> · UX/UI</span>}
+              </span>
+              <span class="row__num num" aria-hidden="true">
+                {projectNumber(p)}
+              </span>
+            </a>
+          </li>
+        ))
+      }
+    </ol>
+    <p class="windex__empty" hidden>—</p>
+  </div>
+
+  <div class="cell c-last media-cell windex__preview m-hide" data-draw aria-hidden="true">
+    <div class="previews">
+      {
+        projects.map((p) => (
+          <div class="preview" data-preview={p.slug}>
+            <Media img={{ ...p.hero, alt: { es: '', en: '' } }} lang={lang} sizes="40vw" />
+          </div>
+        ))
+      }
+    </div>
+  </div>
+</section>
+
+<script>
+  document.querySelectorAll<HTMLElement>('[data-windex]').forEach((root) => {
+    const buttons = root.querySelectorAll<HTMLButtonElement>('[data-filter]');
+    const items = root.querySelectorAll<HTMLLIElement>('li[data-cat]');
+    const previews = root.querySelectorAll<HTMLElement>('[data-preview]');
+
+    buttons.forEach((btn) =>
+      btn.addEventListener('click', () => {
+        const f = btn.dataset.filter;
+        buttons.forEach((b) => b.setAttribute('aria-pressed', String(b === btn)));
+        items.forEach((li) => (li.hidden = f !== 'all' && li.dataset.cat !== f));
+      }),
+    );
+
+    const show = (slug: string | null) =>
+      previews.forEach((p) => p.classList.toggle('is-active', p.dataset.preview === slug));
+
+    root.querySelectorAll<HTMLAnchorElement>('a[data-slug]').forEach((a) => {
+      a.addEventListener('mouseenter', () => show(a.dataset.slug ?? null));
+      a.addEventListener('focus', () => show(a.dataset.slug ?? null));
+    });
+    root.querySelector('.rows')?.addEventListener('mouseleave', () => show(null));
+
+    // Modo captura: ?capture=1&preview=<slug> fija el estado hover de una fila.
+    const frozen = new URLSearchParams(location.search).get('preview');
+    if (document.documentElement.classList.contains('capture') && frozen) {
+      show(frozen);
+      root.querySelector(`a[data-slug="${CSS.escape(frozen)}"]`)?.classList.add('is-hover');
+    }
+  });
+</script>
+
+<style>
+  .windex {
+    grid-template-columns: 1.35fr 1fr;
+    grid-template-rows: minmax(clamp(140px, 24vh, 260px), auto) minmax(clamp(360px, 58vh, 620px), auto);
+  }
+
+  .windex__head .display {
+    font-size: clamp(2.5rem, 5vw, 4.75rem);
+  }
+
+  .filters {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 0.5em;
+    font-size: 0.875rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .filters__sep {
+    color: var(--ink-soft);
+  }
+
+  .filters button {
+    font: inherit;
+    letter-spacing: inherit;
+    text-transform: inherit;
+    color: var(--ink-soft);
+    background: none;
+    border: 0;
+    padding: 8px 2px;
+    cursor: pointer;
+  }
+
+  .filters button[aria-pressed='true'] {
+    color: var(--ink);
+    text-decoration: underline;
+    text-underline-offset: 0.35em;
+  }
+
+  .filters button:hover {
+    color: var(--ink);
+  }
+
+  .windex__list {
+    padding-top: clamp(20px, 2.5vw, 36px);
+  }
+
+  .row {
+    position: relative;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 1rem;
+    padding: 0.35rem 0;
+    text-decoration: none;
+    font-family: var(--serif);
+    text-transform: uppercase;
+    font-size: clamp(1.2rem, 1.9vw, 1.7rem);
+    line-height: 1.25;
+  }
+
+  .row__tag {
+    font-family: var(--sans);
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    color: var(--ink-soft);
+    vertical-align: middle;
+  }
+
+  .row__num {
+    text-transform: none;
+  }
+
+  /* subrayado de fila: una regla que crece de izquierda a derecha */
+  .row::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 1px;
+    background: var(--rule);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.45s var(--ease-out);
+  }
+
+  .row:hover::after,
+  .row:focus-visible::after,
+  .row.is-hover::after {
+    transform: scaleX(1);
+  }
+
+  .row:focus-visible {
+    outline-offset: 4px;
+  }
+
+  .previews {
+    position: relative;
+    height: 100%;
+    margin-right: var(--inr);
+  }
+
+  .preview {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    transition: opacity 0.45s var(--ease-out);
+  }
+
+  .preview.is-active {
+    opacity: 1;
+  }
+
+  .preview :global(.media) {
+    height: 100%;
+  }
+
+  @media (max-width: 767px) {
+    .windex__head {
+      padding-top: 72px;
+    }
+  }
+</style>

@@ -1,0 +1,93 @@
+---
+import Base from '../layouts/Base.astro';
+import ProjectIntro from '../components/ProjectIntro.astro';
+import Spread from '../components/Spread.astro';
+import Band from '../components/Band.astro';
+import ProjectNav from '../components/ProjectNav.astro';
+import ProjectFacts from '../components/ProjectFacts.astro';
+import type { Project } from '../data/projects';
+import { findImage } from '../lib/images';
+import { projectUrl, t, type Lang } from '../i18n/ui';
+import { getImage } from 'astro:assets';
+
+interface Props {
+  project: Project;
+  lang: Lang;
+}
+
+const { project: p, lang } = Astro.props;
+const other: Lang = lang === 'es' ? 'en' : 'es';
+
+// imagen para compartir: la imagen principal del proyecto en 1200 px
+const heroMeta = findImage(p.hero.src);
+const og = heroMeta ? (await getImage({ src: heroMeta, width: 1200, format: 'jpg' })).src : undefined;
+
+// patrones de bandas vacías que se alternan entre pliegos
+const bands = [
+  [1, 2, 1],
+  [2, 1],
+  [1, 1, 2],
+];
+
+// numeración de las fases del proceso (01 — Reto, 02 — Investigación…)
+let stepCount = 0;
+const stepIndex = p.spreads.map((s) => (s.layout === 'step' ? ++stepCount : 0));
+---
+
+<Base
+  lang={lang}
+  title={p.title[lang]}
+  description={p.description[0]?.[lang]}
+  altUrl={projectUrl(p.slug, other)}
+  current="work"
+  ogImage={og}
+>
+  <article>
+    <ProjectIntro project={p} lang={lang} />
+    {p.facts && <ProjectFacts facts={p.facts} lang={lang} />}
+    {
+      p.spreads.map((s, i) => (
+        <>
+          {/* en los case studies, las fases van seguidas; la banda vacía separa los demás bloques */}
+          {!(s.layout === 'step' && i > 0 && p.spreads[i - 1].layout === 'step') && <Band cols={bands[i % bands.length]} />}
+          <Spread spread={s} lang={lang} index={stepIndex[i]} />
+        </>
+      ))
+    }
+    {
+      p.mediumUrl && (
+        <section class="sheet medium" data-draw>
+          <div class="cell c-first c-last" data-draw>
+            <a class="medium__link" href={p.mediumUrl} target="_blank" rel="noopener">
+              <span class="display display--s">{t(lang).readMedium}</span>
+              <span aria-hidden="true">↗</span>
+              <span class="visually-hidden">{t(lang).newTab}</span>
+            </a>
+          </div>
+        </section>
+      )
+    }
+  </article>
+  <Band cols={[1, 3]} />
+  <ProjectNav project={p} lang={lang} />
+</Base>
+
+<style>
+  .medium__link {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.6em;
+    padding: clamp(20px, 3vw, 40px) 0;
+    text-decoration: none;
+  }
+
+  .medium__link .display {
+    background: linear-gradient(currentColor, currentColor) left bottom / 100% 1.5px no-repeat;
+    padding-bottom: 0.15em;
+  }
+
+  .medium__link:hover .display {
+    background-size: 0 1.5px;
+    transition: background-size 0.45s var(--ease-out);
+  }
+</style>

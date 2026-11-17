@@ -1,0 +1,498 @@
+---
+// Un "pliego" de la página de proyecto. El tipo de composición lo decide
+// `spread.layout` en src/data/projects.ts.
+import Media from './Media.astro';
+import type { Img, Spread } from '../data/projects';
+import { findImage } from '../lib/images';
+import { t, type Lang } from '../i18n/ui';
+
+interface Props {
+  spread: Spread;
+  lang: Lang;
+  /** Número de fase (solo para layout 'step'). */
+  index?: number;
+}
+
+const { spread: s, lang, index = 1 } = Astro.props;
+const ui = t(lang);
+
+const figmaSrc =
+  s.layout === 'figma' && s.url
+    ? `https://www.figma.com/embed?embed_host=share&url=${encodeURIComponent(s.url)}`
+    : '';
+
+const screenCols = s.layout === 'screens' ? Math.min(s.images.length, s.device === 'phone' ? 4 : 2) : 1;
+const galleryCols = s.layout === 'gallery' ? Math.min(s.images.length, 3) : 1;
+// imágenes de una fase: filas de dos como máximo
+const stepRows = (s.layout === 'step' ? (s.images ?? []) : []).reduce<Img[][]>(
+  (rows, img, i) => (i % 2 ? rows[rows.length - 1].push(img) : rows.push([img]), rows),
+  [],
+);
+const figmaHref = s.layout === 'figma' ? s.protoUrl || s.url : '';
+// A sangre solo si la imagen es una foto con resolución para pantallas grandes;
+// si no, se muestra centrada dentro de los márgenes, a su tamaño real como máximo.
+const fullMeta = s.layout === 'full-bleed' ? findImage(s.image.src) : undefined;
+const bleed = s.layout === 'full-bleed' && s.image.kind !== 'sketch' && (fullMeta?.width ?? 0) >= 1920;
+const fullSizes = fullMeta && !bleed ? `(max-width: ${fullMeta.width}px) 100vw, ${fullMeta.width}px` : '100vw';
+---
+
+{
+  s.layout === 'text-hero' && (
+    <section class:list={['sheet sp sp--text-hero', { 'is-reverse': s.reverse }]} data-draw>
+      <div class:list={['cell sp__text v-end', s.reverse ? 'c-last' : 'c-first']} data-draw>
+        <div class="prose">
+          {s.text.map((p) => (
+            <p>{p[lang]}</p>
+          ))}
+        </div>
+      </div>
+      <div class:list={['cell media-cell sp__img', s.reverse ? 'c-first' : 'c-last']} data-draw>
+        <Media img={s.image} lang={lang} />
+      </div>
+    </section>
+  )
+}
+
+{
+  s.layout === 'two-images' && (
+    <section class="sheet sp sp--two" data-draw>
+      {s.images.map((img, i) => (
+        <div class:list={['cell media-cell', i === 0 ? 'c-first' : 'c-last']} data-draw>
+          <Media img={img} lang={lang} />
+        </div>
+      ))}
+    </section>
+  )
+}
+
+{
+  s.layout === 'full-bleed' && (
+    <section class:list={['sheet sp sp--full', bleed ? 'no-rails' : 'is-framed']} data-draw>
+      <div class:list={['cell media-cell', { 'c-first c-last': !bleed }]} data-draw>
+        <Media img={s.image} lang={lang} fill={false} sizes={fullSizes} />
+      </div>
+    </section>
+  )
+}
+
+{
+  s.layout === 'text-ref-secondary' && (
+    <section class="sheet sp sp--trs" data-draw>
+      <div class="cell c-first trs__text v-end" data-draw>
+        <div class="prose">
+          {s.text.map((p) => (
+            <p>{p[lang]}</p>
+          ))}
+        </div>
+      </div>
+      <div class="cell media-cell trs__ref" data-draw>
+        <Media img={s.reference} lang={lang} sizes="(max-width: 767px) 100vw, 33vw" />
+      </div>
+      <div class="cell c-last trs__cap v-end" data-draw>
+        <div class="caption">
+          {s.caption.map((p) => (
+            <p>{p[lang]}</p>
+          ))}
+        </div>
+      </div>
+      {s.body && (
+        <div class="cell c-first trs__body v-center" data-draw>
+          <div class="prose">
+            {s.body.map((p) => (
+              <p>{p[lang]}</p>
+            ))}
+          </div>
+        </div>
+      )}
+      <div class="cell c-last media-cell trs__sec" data-draw>
+        <Media img={s.secondary} lang={lang} sizes="(max-width: 767px) 100vw, 30vw" />
+      </div>
+    </section>
+  )
+}
+
+{
+  s.layout === 'figma' && (
+    <section class="sheet sp sp--figma" data-draw>
+      <div class="cell c-first v-end" data-draw>
+        <h2 class="display display--s">{s.title[lang]}</h2>
+        {s.text && (
+          <div class="prose sp__after-title">
+            {s.text.map((p) => (
+              <p>{p[lang]}</p>
+            ))}
+          </div>
+        )}
+        {figmaHref && (
+          <a class="btn sp__after-title" href={figmaHref} target="_blank" rel="noopener">
+            {ui.viewPrototype} ↗<span class="visually-hidden"> {ui.newTab}</span>
+          </a>
+        )}
+      </div>
+      <div class="cell c-last media-cell" data-draw>
+        {figmaSrc ? (
+          <iframe class="figma" src={figmaSrc} title={s.title[lang]} loading="lazy" allowfullscreen />
+        ) : (
+          <div class="placeholder figma" role="img" aria-label={ui.figmaPending}>
+            <span>{ui.figmaPending}</span>
+            <span>
+              <code>spreads → layout: 'figma' → url</code>
+            </span>
+          </div>
+        )}
+      </div>
+    </section>
+  )
+}
+
+{
+  s.layout === 'step' && (
+    <>
+      <section class="sheet sp sp--step" aria-labelledby={`step-${index}`} data-draw>
+        <div class="cell c-first step__head" data-draw>
+          <p class="eyebrow">
+            <span class="num">{String(index).padStart(2, '0')}</span> — {ui.steps[s.step]}
+          </p>
+          <h2 class="display display--s" id={`step-${index}`}>
+            {s.title[lang]}
+          </h2>
+        </div>
+        <div class="cell c-last step__body" data-draw>
+          <div class="prose">
+            {s.quote && !s.text && <blockquote class="step__quote">{s.quote[lang]}</blockquote>}
+            {s.text?.map((p) => (
+              <p>{p[lang]}</p>
+            ))}
+            {s.bullets && (
+              <ul class="step__list">
+                {s.bullets.map((b) => (
+                  <li>{b[lang]}</li>
+                ))}
+              </ul>
+            )}
+            {s.quote && s.text && <blockquote class="step__quote">{s.quote[lang]}</blockquote>}
+          </div>
+        </div>
+      </section>
+      {stepRows.map((row) => (
+        <div class="sheet step__media" style={`grid-template-columns: repeat(${row.length}, minmax(0, 1fr))`} data-draw>
+          {row.map((img, i) => (
+            <div class:list={['cell media-cell', { 'c-first': i === 0, 'c-last': i === row.length - 1 }]} data-draw>
+              <Media
+                img={img}
+                lang={lang}
+                fill={false}
+                sizes={row.length > 1 ? '(max-width: 767px) 100vw, 50vw' : '(max-width: 767px) 100vw, 80vw'}
+              />
+            </div>
+          ))}
+        </div>
+      ))}
+    </>
+  )
+}
+
+{
+  s.layout === 'gallery' && (
+    <section class="sheet sp sp--gallery" style={`grid-template-columns: repeat(${galleryCols}, minmax(0, 1fr))`} data-draw>
+      {s.title && (
+        <div class="cell c-first c-last gallery__title" data-draw>
+          <h2 class="display display--s">{s.title[lang]}</h2>
+        </div>
+      )}
+      {s.images.map((img, i) => (
+        <figure
+          class:list={['cell gallery__item', { 'c-first': i % galleryCols === 0, 'c-last': i % galleryCols === galleryCols - 1 }]}
+          data-draw
+        >
+          <Media img={img} lang={lang} fill={false} sizes={`(max-width: 767px) 100vw, ${Math.round(100 / galleryCols)}vw`} />
+          {img.caption && <figcaption class="eyebrow">{img.caption[lang]}</figcaption>}
+        </figure>
+      ))}
+    </section>
+  )
+}
+
+{
+  s.layout === 'video' && (
+    <section class="sheet sp sp--video" data-draw>
+      <div class="cell c-first c-last" data-draw>
+        <div class="video">
+          <iframe
+            src={`https://www.youtube-nocookie.com/embed/${s.youtube}`}
+            title={s.title[lang]}
+            loading="lazy"
+            allow="accelerometer; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+            allowfullscreen
+          />
+        </div>
+      </div>
+    </section>
+  )
+}
+
+{
+  s.layout === 'screens' && (
+    <section class:list={['sheet sp sp--screens', `is-${s.device}`]} style={`grid-template-columns: repeat(${screenCols}, minmax(0, 1fr))`} data-draw>
+      {s.text && (
+        <div class="cell c-first c-last screens__text" data-draw>
+          <div class="prose">
+            {s.text.map((p) => (
+              <p>{p[lang]}</p>
+            ))}
+          </div>
+        </div>
+      )}
+      {s.images.map((img, i) => (
+        <div
+          class:list={['cell screen-cell', { 'c-first': i % screenCols === 0, 'c-last': i % screenCols === screenCols - 1 }]}
+          data-draw
+        >
+          <div class="screen">
+            <Media img={img} lang={lang} sizes={s.device === 'phone' ? '(max-width: 767px) 80vw, 22vw' : '(max-width: 767px) 100vw, 45vw'} />
+          </div>
+        </div>
+      ))}
+    </section>
+  )
+}
+
+<style>
+  .sp--text-hero,
+  .sp--two {
+    grid-template-columns: 1fr 1fr;
+    min-height: var(--spread-h);
+  }
+
+  .sp--text-hero.is-reverse .sp__text {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .sp--text-hero.is-reverse .sp__img {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .sp--full {
+    grid-template-columns: 1fr;
+  }
+
+  .sp--full .cell::before {
+    z-index: 4;
+  }
+
+  /* imagen centrada dentro de los márgenes, sin ampliarla */
+  .sp--full.is-framed .media-cell {
+    align-items: center;
+    padding: clamp(24px, 4vw, 64px) var(--m);
+  }
+
+  .sp--full.is-framed .media-cell > :global(.media) {
+    width: 100%;
+    margin: 0 auto;
+  }
+
+  .sp--trs {
+    grid-template-columns: 1.45fr 1.1fr 1fr;
+    grid-template-rows: 1.15fr 1fr;
+    grid-template-areas:
+      'text ref cap'
+      'body body sec';
+    min-height: calc(var(--spread-h) * 1.05);
+  }
+
+  .trs__text {
+    grid-area: text;
+  }
+  .trs__ref {
+    grid-area: ref;
+  }
+  .trs__cap {
+    grid-area: cap;
+  }
+  .trs__body {
+    grid-area: body;
+  }
+  .trs__sec {
+    grid-area: sec;
+  }
+
+  .caption {
+    font-size: 0.875rem;
+    max-width: 34ch;
+  }
+
+  .caption p:last-child {
+    font-family: var(--serif);
+    font-style: italic;
+  }
+
+  .sp--figma {
+    grid-template-columns: 1fr 2fr;
+  }
+
+  .sp__after-title {
+    margin-top: 1.25rem;
+  }
+
+  .figma {
+    display: block;
+    width: 100%;
+    aspect-ratio: 16 / 10;
+    min-height: 420px;
+    border: 0;
+  }
+
+  .placeholder.figma {
+    display: grid;
+    align-content: center;
+  }
+
+  .media-cell > .figma {
+    margin-left: var(--inl);
+    width: calc(100% - var(--inl) - var(--inr));
+  }
+
+  /* fases del proceso (UX/UI) */
+  .sp--step {
+    grid-template-columns: 1fr 1.6fr;
+  }
+
+  .step__head {
+    padding-top: clamp(32px, 4.5vw, 72px);
+    padding-bottom: clamp(32px, 4.5vw, 72px);
+  }
+
+  .step__head .eyebrow {
+    margin-bottom: 0.9rem;
+  }
+
+  .step__body {
+    padding-top: clamp(32px, 4.5vw, 72px);
+    padding-bottom: clamp(32px, 4.5vw, 72px);
+  }
+
+  .step__list {
+    margin: 1.25em 0 0;
+    display: grid;
+    gap: 0.6em;
+  }
+
+  .step__list li {
+    position: relative;
+    padding-left: 1.6em;
+  }
+
+  .step__list li::before {
+    content: '—';
+    position: absolute;
+    left: 0;
+    color: var(--ink-soft);
+  }
+
+  .step__quote {
+    margin: 1.4em 0 0;
+    padding-left: 1.1em;
+    border-left: var(--rule-w) solid var(--rule);
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: clamp(1.1rem, 1.5vw, 1.35rem);
+    line-height: 1.45;
+  }
+
+  .step__quote:first-child {
+    margin-top: 0;
+    margin-bottom: 1.4em;
+  }
+
+  .sheet.step__media .cell.media-cell {
+    align-items: center;
+    padding-top: clamp(20px, 3vw, 48px);
+    padding-bottom: clamp(20px, 3vw, 48px);
+  }
+
+  .sheet.step__media .cell.media-cell > :global(.media) {
+    width: calc(100% - var(--inl) - var(--inr) - 2 * clamp(12px, 2vw, 32px));
+    max-height: 78vh;
+    margin-left: calc(var(--inl) + clamp(12px, 2vw, 32px));
+    margin-right: calc(var(--inr) + clamp(12px, 2vw, 32px));
+  }
+
+  /* galería */
+  .gallery__title {
+    grid-column: 1 / -1;
+  }
+
+  .gallery__item {
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .gallery__item :global(.media) {
+    width: 100%;
+    max-height: 72vh;
+  }
+
+  .gallery__item figcaption {
+    align-self: flex-start;
+  }
+
+  /* vídeo */
+  .video {
+    max-width: 1100px;
+    margin: 0 auto;
+    aspect-ratio: 16 / 9;
+  }
+
+  .video iframe {
+    display: block;
+    width: 100%;
+    height: 100%;
+    border: 0;
+  }
+
+  .screens__text {
+    grid-column: 1 / -1;
+  }
+
+  .screen-cell {
+    display: grid;
+    place-items: center;
+    padding-top: clamp(24px, 4vw, 64px);
+    padding-bottom: clamp(24px, 4vw, 64px);
+  }
+
+  .screen {
+    width: 100%;
+    outline: var(--rule-w) solid var(--rule);
+  }
+
+  .is-phone .screen {
+    max-width: 280px;
+  }
+
+  .is-phone .screen :global(.media) {
+    aspect-ratio: 9 / 19.5;
+  }
+
+  .is-desktop .screen :global(.media) {
+    aspect-ratio: 16 / 10;
+  }
+
+  @media (max-width: 767px) {
+    .sp--text-hero .sp__text {
+      order: 2;
+    }
+    .figma {
+      min-height: 0;
+      aspect-ratio: 3 / 4;
+    }
+    .is-phone .screen {
+      max-width: 240px;
+    }
+  }
+</style>

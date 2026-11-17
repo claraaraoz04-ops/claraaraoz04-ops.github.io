@@ -1,0 +1,20 @@
+---
+// Banda de celdas vacías entre bloques, como los espacios en blanco del PDF.
+// `cols` son las proporciones de las columnas, p. ej. [1, 2, 1].
+interface Props {
+  cols?: number[];
+}
+
+const { cols = [1, 2, 1] } = Astro.props;
+---
+
+<div class="sheet band" style={`grid-template-columns: ${cols.map((c) => `${c}fr`).join(' ')}`} data-draw aria-hidden="true">
+  {
+    cols.map((_, i) => (
+      <div
+        class:list={['cell', { 'c-first': i === 0, 'c-last': i === cols.length - 1, 'm-hide': i > 0, 'm-short': i === 0 }]}
+        data-draw
+      />
+    ))
+  }
+</div>

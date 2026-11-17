@@ -1,0 +1,132 @@
+---
+// Sobre mí: composición de la página "Presentación" del PDF.
+import Base from '../layouts/Base.astro';
+import Media from '../components/Media.astro';
+import { about, routes, t, type Lang } from '../i18n/ui';
+import { site } from '../data/site';
+
+interface Props {
+  lang: Lang;
+}
+
+const { lang } = Astro.props;
+const ui = t(lang);
+---
+
+<Base lang={lang} title={ui.nav.about} altUrl={routes.about[lang === 'es' ? 'en' : 'es']} current="about">
+  <section class="sheet about" data-draw>
+    <div class="cell c-first a-title v-end" data-draw>
+      <h1 class="display">{ui.about}</h1>
+    </div>
+    <div class="cell a-top m-hide" data-draw></div>
+    <div class="cell c-last a-side1 m-hide" data-draw></div>
+
+    <div class="cell c-first a-text" data-draw>
+      <p class="prose a-lede">{about[lang]}</p>
+    </div>
+    <div class="cell media-cell a-photo" data-draw>
+      <Media
+        img={{
+          src: 'about/clara-retrato.jpg',
+          kind: 'photo',
+          alt: {
+            es: `Retrato de ${site.name} frente a un muro de hojas verdes`,
+            en: `Portrait of ${site.name} in front of a wall of green leaves`,
+          },
+        }}
+        lang={lang}
+        priority
+        sizes="(max-width: 767px) 100vw, 35vw"
+      />
+    </div>
+    <div class="cell c-last a-side2 m-hide" data-draw></div>
+
+    <div class="cell c-first a-meta" data-draw>
+      <dl>
+        <div>
+          <dt class="eyebrow">{ui.education}</dt>
+          <dd>{ui.educationText}</dd>
+        </div>
+        <div>
+          <dt class="eyebrow">{ui.focus}</dt>
+          <dd>{ui.focusText}</dd>
+        </div>
+      </dl>
+    </div>
+    <div class="cell a-bottom m-short" data-draw></div>
+    <div class="cell c-last a-side3 m-hide" data-draw></div>
+  </section>
+</Base>
+
+<style>
+  .about {
+    grid-template-columns: 1.55fr 1fr 0.32fr;
+    grid-template-rows: minmax(clamp(160px, 26vh, 300px), auto) auto auto;
+    grid-template-areas:
+      'title top side1'
+      'text photo side2'
+      'meta bottom side3';
+  }
+
+  .a-title {
+    grid-area: title;
+  }
+  .a-top {
+    grid-area: top;
+  }
+  .a-side1 {
+    grid-area: side1;
+  }
+  .a-text {
+    grid-area: text;
+  }
+  .a-photo {
+    grid-area: photo;
+    min-height: clamp(380px, 52vh, 620px);
+  }
+  .a-side2 {
+    grid-area: side2;
+  }
+  .a-meta {
+    grid-area: meta;
+  }
+  .a-bottom {
+    grid-area: bottom;
+  }
+  .a-side3 {
+    grid-area: side3;
+  }
+
+  .a-lede {
+    text-indent: 2.5em;
+    font-size: clamp(1rem, 1.2vw, 1.125rem);
+    line-height: 1.8;
+  }
+
+  .a-meta dl {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--pad);
+    margin: 0;
+  }
+
+  .a-meta dd {
+    margin: 0.35em 0 0;
+  }
+
+  .a-bottom {
+    min-height: clamp(120px, 18vh, 200px);
+  }
+
+  @media (max-width: 767px) {
+    .a-title {
+      padding-top: 72px;
+    }
+    .a-photo {
+      min-height: 0;
+    }
+    .a-meta dl {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

@@ -1,0 +1,53 @@
+---
+// Pie: réplica reducida de la última página del PDF.
+import ContactDetails from './ContactDetails.astro';
+import { t, type Lang } from '../i18n/ui';
+import { site } from '../data/site';
+
+interface Props {
+  lang: Lang;
+}
+
+const { lang } = Astro.props;
+const ui = t(lang);
+---
+
+<footer class="sheet footer" data-draw>
+  <div class="cell c-first m-hide" data-draw></div>
+  <div class="cell f-thanks v-center" data-draw>
+    <p class="display display--s">{ui.thanks}</p>
+  </div>
+  <div class="cell c-last m-hide" data-draw></div>
+
+  <div class="cell c-first f-a m-short" data-draw></div>
+  <div class="cell f-contact" data-draw>
+    <ContactDetails lang={lang} />
+  </div>
+  <div class="cell c-last f-copy v-end" data-draw>
+    <p class="eyebrow">© {new Date().getFullYear()} {site.name}</p>
+  </div>
+</footer>
+
+<style>
+  .footer {
+    grid-template-columns: 1fr 1.25fr 1fr;
+    grid-template-rows: minmax(clamp(160px, 26vh, 260px), auto) auto;
+    margin-top: 0;
+  }
+
+  .f-thanks {
+    text-align: center;
+  }
+
+  .f-copy p {
+    font-size: 0.6875rem;
+  }
+
+  @media (max-width: 767px) {
+    .f-thanks {
+      text-align: left;
+      padding-top: 56px;
+      padding-bottom: 56px;
+    }
+  }
+</style>

@@ -1,0 +1,63 @@
+---
+// Tríada de palabras clave en cascada: cada palabra entra un poco más a la derecha.
+//   ELEGANCIA,
+//       INNOVACIÓN,
+//           EXPERIENCIA
+interface Props {
+  words: string[];
+  /** separación de cada escalón, en em */
+  step?: number;
+  class?: string;
+}
+
+const { words, step = 2.2, class: className } = Astro.props;
+---
+
+<p class:list={['cascade', className]} data-cascade style={`--step: ${step}em`}>
+  {
+    words.map((word, i) => (
+      <span class="cascade__word" style={`--i: ${i}`}>
+        {word}
+        {i < words.length - 1 ? ',' : ''}
+      </span>
+    ))
+  }
+</p>
+
+<style>
+  .cascade {
+    font-family: var(--serif);
+    font-style: italic;
+    font-weight: 400;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    font-size: clamp(1.05rem, 1.55vw, 1.4rem);
+    line-height: 1.55;
+  }
+
+  .cascade__word {
+    display: block;
+    padding-left: calc(var(--i) * var(--step));
+    white-space: nowrap;
+  }
+
+  :global(.motion) .cascade__word {
+    opacity: 0;
+    transform: translateX(-14px);
+    transition:
+      opacity 0.7s var(--ease-out),
+      transform 0.9s var(--ease-out);
+    transition-delay: calc(var(--i) * 180ms + 120ms);
+  }
+
+  :global(.motion) .cascade.is-in .cascade__word {
+    opacity: 1;
+    transform: none;
+  }
+
+  @media (max-width: 380px) {
+    .cascade {
+      --step: 1.4em !important;
+    }
+  }
+</style>

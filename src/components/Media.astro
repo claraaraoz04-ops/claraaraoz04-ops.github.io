@@ -1,0 +1,59 @@
+---
+// Imagen optimizada, o un recuadro con el nombre del archivo si todavía no existe.
+import { Image } from 'astro:assets';
+import type { Img } from '../data/projects';
+import { findImage } from '../lib/images';
+import { t, type Lang } from '../i18n/ui';
+
+interface Props {
+  img: Img;
+  lang: Lang;
+  /** atributo sizes del <img> */
+  sizes?: string;
+  /** true para la imagen principal visible al cargar (sin lazy-load) */
+  priority?: boolean;
+  /** la imagen ocupa todo el alto de su celda */
+  fill?: boolean;
+  class?: string;
+}
+
+const { img, lang, sizes = '(max-width: 767px) 100vw, 50vw', priority = false, fill = true, class: className } = Astro.props;
+const meta = findImage(img.src);
+const isSketch = img.kind === 'sketch';
+const alt = img.alt[lang];
+// Tamaños generados: nunca más anchos que el original (no se amplía).
+const widths = meta ? [480, 800, 1200, 1600, 2000, 2400].filter((w) => w < meta.width) : [];
+if (meta) widths.push(Math.min(meta.width, 2400));
+// Con tamaño natural, la imagen no se muestra más grande que su ancho real en píxeles.
+const style = meta
+  ? `--ar: ${meta.width} / ${meta.height};${fill ? '' : ` max-width: ${meta.width}px;`}`
+  : undefined;
+---
+
+<figure
+  class:list={['media', { 'media--sketch': isSketch, 'media--contain': img.fit === 'contain', 'media--fill': fill, reveal: !priority }, className]}
+  style={style}
+>
+  {
+    meta ? (
+      <Image
+        src={meta}
+        alt={alt}
+        widths={widths}
+        sizes={sizes}
+        quality={88}
+        loading={priority ? 'eager' : 'lazy'}
+        fetchpriority={priority ? 'high' : 'auto'}
+        decoding="async"
+        style={img.position ? `object-position: ${img.position}` : undefined}
+      />
+    ) : (
+      <div class="placeholder" role="img" aria-label={alt}>
+        <span>{t(lang).placeholder}</span>
+        <span>
+          <code>src/assets/images/{img.src}</code>
+        </span>
+      </div>
+    )
+  }
+</figure>

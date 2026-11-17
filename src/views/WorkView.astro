@@ -1,0 +1,17 @@
+---
+import Base from '../layouts/Base.astro';
+import WorkIndex from '../components/WorkIndex.astro';
+import Band from '../components/Band.astro';
+import { routes, t, type Lang } from '../i18n/ui';
+
+interface Props {
+  lang: Lang;
+}
+
+const { lang } = Astro.props;
+---
+
+<Base lang={lang} title={t(lang).nav.work} altUrl={routes.work[lang === 'es' ? 'en' : 'es']} current="work">
+  <WorkIndex lang={lang} as="h1" />
+  <Band cols={[2, 1, 1]} />
+</Base>

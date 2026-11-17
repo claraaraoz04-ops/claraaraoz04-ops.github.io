@@ -1,0 +1,39 @@
+---
+// Ficha del proyecto (UX/UI): rol, duración, equipo y herramientas en cuatro celdas.
+import type { Project } from '../data/projects';
+import { t, type Lang } from '../i18n/ui';
+
+interface Props {
+  facts: NonNullable<Project['facts']>;
+  lang: Lang;
+}
+
+const { facts, lang } = Astro.props;
+const ui = t(lang);
+const keys = ['role', 'duration', 'team', 'tools'] as const;
+---
+
+<dl class="sheet facts" data-draw>
+  {
+    keys.map((k, i) => (
+      <div class:list={['cell', { 'c-first': i === 0, 'c-last': i === keys.length - 1 }]} data-draw>
+        <dt class="eyebrow">{ui.facts[k]}</dt>
+        <dd>{facts[k][lang]}</dd>
+      </div>
+    ))
+  }
+</dl>
+
+<style>
+  .facts {
+    grid-template-columns: 1.4fr 1fr 1fr 1fr;
+    margin: 0;
+  }
+
+  .facts dd {
+    margin: 0.5rem 0 0;
+    font-family: var(--serif);
+    font-size: clamp(1rem, 1.25vw, 1.15rem);
+    line-height: 1.4;
+  }
+</style>

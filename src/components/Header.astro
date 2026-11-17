@@ -1,0 +1,171 @@
+---
+import { routes, t, type Lang, type RouteKey } from '../i18n/ui';
+import { site } from '../data/site';
+
+interface Props {
+  lang: Lang;
+  /** URL de esta misma página en el otro idioma */
+  altUrl: string;
+  current?: RouteKey;
+}
+
+const { lang, altUrl, current } = Astro.props;
+const ui = t(lang);
+const other: Lang = lang === 'es' ? 'en' : 'es';
+const links: { key: RouteKey; label: string }[] = [
+  { key: 'work', label: ui.nav.work },
+  { key: 'about', label: ui.nav.about },
+  { key: 'contact', label: ui.nav.contact },
+];
+---
+
+<header class="site-header">
+  <a class="brand serif" href={routes.home[lang]}>
+    <span class="brand__full">{site.name}</span>
+    <span class="brand__short" aria-hidden="true">{site.shortName}</span>
+  </a>
+  <nav class="nav" aria-label={ui.navLabel}>
+    <ul>
+      {
+        links.map((l, i) => (
+          <li>
+            {i > 0 && <span class="dot" aria-hidden="true">·</span>}
+            <a href={routes[l.key][lang]} aria-current={current === l.key ? 'page' : undefined}>
+              {l.label}
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </nav>
+  <div class="lang" aria-label={ui.langLabel} role="group">
+    <span aria-current="true" class="lang__on">{lang.toUpperCase()}</span>
+    <span aria-hidden="true">/</span>
+    <a href={altUrl} hreflang={other} lang={other}>{other.toUpperCase()}</a>
+  </div>
+  <span class="site-header__rule" data-draw aria-hidden="true"></span>
+</header>
+
+<style>
+  .site-header {
+    position: fixed;
+    inset: 0 0 auto 0;
+    z-index: 50;
+    height: var(--header-h);
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    align-items: center;
+    gap: clamp(16px, 3vw, 48px);
+    padding: 0 var(--m);
+    background: var(--cream);
+  }
+
+  .site-header__rule {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: var(--rule-w);
+  }
+
+  .site-header__rule::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--rule);
+    transform-origin: left;
+  }
+
+  .brand {
+    font-size: 1.125rem;
+    letter-spacing: 0.01em;
+    text-decoration: none;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .brand__short {
+    display: none;
+  }
+
+  .nav ul {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .nav li {
+    display: flex;
+    align-items: center;
+  }
+
+  .dot {
+    padding: 0 0.6em;
+    color: var(--ink-soft);
+  }
+
+  .nav a,
+  .lang a {
+    text-decoration: none;
+    font-size: 0.875rem;
+    letter-spacing: 0.04em;
+    padding: 6px 0;
+    background: linear-gradient(currentColor, currentColor) left 85% / 0 1px no-repeat;
+    transition: background-size 0.35s var(--ease-out);
+  }
+
+  .nav a:hover,
+  .lang a:hover,
+  .nav a[aria-current='page'] {
+    background-size: 100% 1px;
+  }
+
+  .lang {
+    display: flex;
+    align-items: baseline;
+    gap: 0.4em;
+    font-size: 0.8125rem;
+    letter-spacing: 0.08em;
+    color: var(--ink-soft);
+  }
+
+  .lang__on {
+    color: var(--ink);
+  }
+
+  @media (max-width: 1023px) {
+    .brand__full {
+      display: none;
+    }
+    .brand__short {
+      display: inline;
+    }
+  }
+
+  @media (max-width: 767px) {
+    .site-header {
+      grid-template-columns: 1fr auto;
+      grid-template-rows: 1fr 1fr;
+      row-gap: 0;
+      align-items: center;
+    }
+    .brand {
+      font-size: 1.0625rem;
+    }
+    .nav {
+      grid-column: 1 / -1;
+      grid-row: 2;
+      align-self: start;
+    }
+    .lang {
+      grid-column: 2;
+      grid-row: 1;
+    }
+    .nav a,
+    .lang a {
+      display: inline-block;
+      padding: 10px 0;
+    }
+  }
+</style>

@@ -1,0 +1,30 @@
+---
+import Base from '../layouts/Base.astro';
+import { routes, t } from '../i18n/ui';
+
+const ui = t('es');
+---
+
+<Base lang="es" title={ui.notFound} altUrl={routes.home.en}>
+  <section class="sheet nf" data-draw>
+    <div class="cell c-first v-end" data-draw>
+      <p class="display num">404</p>
+    </div>
+    <div class="cell c-last v-end" data-draw>
+      <h1 class="display display--s">{ui.notFound}</h1>
+      <p class="back">
+        <a href={routes.home.es}>{ui.backHome}</a> · <a href={routes.home.en} lang="en">{t('en').backHome}</a>
+      </p>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .nf {
+    grid-template-columns: 1fr 1fr;
+    min-height: 60svh;
+  }
+  .back {
+    margin-top: 1.25rem;
+  }
+</style>

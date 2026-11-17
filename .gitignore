@@ -1,0 +1,10 @@
+node_modules/
+dist/
+.astro/
+.vercel/
+.netlify/
+.DS_Store
+
+# Ajustes locales de Claude y otros proyectos que no forman parte de la web
+.claude/
+signup-flow/
