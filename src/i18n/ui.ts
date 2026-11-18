@@ -9,7 +9,7 @@ export type L = { es: string; en: string };
 
 export const ui = {
   es: {
-    subtitle: 'Diseñadora de Producto · UX/UI & Industrial Design',
+    subtitle: 'Diseñadora de producto · UX/UI & Industrial Design',
     description:
       'Portfolio de Clara Fernández de Araoz Serra, diseñadora de producto especializada en diseño industrial y UX/UI.',
     nav: { work: 'Trabajo', about: 'Sobre mí', contact: 'Contacto' },
